@@ -7,34 +7,35 @@ import { Edit, X, Zap } from 'lucide-react';
 // NOTE: Using the correct public API URL as confirmed by the user
 const FULL_PLAYERS_URL = 'https://api.hirefraction.com/api/test/baseball';
 // NOTE: Placeholder for your C# API, which will be integrated later
-const LOCAL_API_BASE_URL = 'http://localhost:5058/api/Baseball'; 
+const LOCAL_API_BASE_URL = 'http://localhost:5058/api/Baseball';
 
 
 // Define the required 18 columns with their exact keys from the API
 const COLUMN_CONFIG = [
   { header: 'Player', key: 'Player name', width: 'w-48', sortable: false, editable: false },
-  { header: 'Pos', key: 'position', width: 'w-16', sortable: false, editable: false },
-  { header: 'G', key: 'Games', width: 'w-24', sortable: false, editable: false },
-  { header: 'AB', key: 'At-bat', width: 'w-24', sortable: false, editable: false },
-  { header: 'R', key: 'Runs', width: 'w-24', sortable: false, editable: false },
-  { header: 'H', key: 'Hits', width: 'w-24', sortable: true, editable: true }, // Sortable & Editable
-  { header: '2B', key: 'Double (2B)', width: 'w-24', sortable: false, editable: false },
-  { header: '3B', key: 'third baseman', width: 'w-24', sortable: false, editable: false },
-  { header: 'HR', key: 'home run', width: 'w-24', sortable: true, editable: true }, // Sortable & Editable
-  { header: 'RBI', key: 'run batted in', width: 'w-24', sortable: false, editable: true }, // Editable
-  { header: 'BB', key: 'a walk', width: 'w-24', sortable: false, editable: false },
-  { header: 'SO', key: 'Strikeouts', width: 'w-24', sortable: false, editable: false },
-  { header: 'SB', key: 'stolen base', width: 'w-16', sortable: false, editable: false },
-  { header: 'CS', key: 'Caught stealing', width: 'w-16', sortable: false, editable: false },
-  { header: 'AVG', key: 'AVG', width: 'w-20', sortable: false, editable: true }, // Editable
+  { header: 'Position', key: 'position', width: 'w-16', sortable: false, editable: false },
+  { header: 'Games', key: 'Games', width: 'w-24', sortable: false, editable: true },
+  { header: 'At Bat', key: 'At-bat', width: 'w-24', sortable: false, editable: true },
+  { header: 'Runs', key: 'Runs', width: 'w-24', sortable: false, editable: true },
+  { header: 'Hits', key: 'Hits', width: 'w-24', sortable: true, editable: true }, 
+  { header: '2B', key: 'Double (2B)', width: 'w-24', sortable: false, editable: true },
+  { header: '3B', key: 'third baseman', width: 'w-24', sortable: false, editable: true },
+  { header: 'HR', key: 'home run', width: 'w-24', sortable: true, editable: true }, 
+  { header: 'RBI', key: 'run batted in', width: 'w-24', sortable: false, editable: true }, 
+  { header: 'Walks', key: 'a walk', width: 'w-24', sortable: false, editable: true },
+  { header: 'Strikeouts', key: 'Strikeouts', width: 'w-24', sortable: false, editable: true },
+  { header: 'Stolen Bases', key: 'stolen base', width: 'w-16', sortable: false, editable: true },
+  { header: 'Caught Stealing', key: 'Caught stealing', width: 'w-16', sortable: false, editable: true },
+  { header: 'AVG', key: 'AVG', width: 'w-20', sortable: false, editable: true }, 
   { header: 'OBP', key: 'On-base Percentage', width: 'w-20', sortable: false, editable: false },
   { header: 'SLG', key: 'Slugging Percentage', width: 'w-20', sortable: false, editable: false },
   { header: 'OPS', key: 'On-base Plus Slugging', width: 'w-20', sortable: false, editable: false },
-  { header: 'Actions', key: 'actions', width: 'w-24', sortable: false, editable: false }, // Action column
+  { header: 'Actions', key: 'actions', width: 'w-24', sortable: false, editable: false }, 
 ];
 
-// Define which keys can be edited and which are used for sorting
-const editableKeys = ['Team', 'Hits', 'home run', 'AVG', 'run batted in'];
+// Define which keys can be edited 
+const editableKeys = ['Games', 'At-bat', 'Runs', 'Hits','Double (2B)', 
+  'third baseman', 'home run', 'run batted in', 'a walk', 'Strikeouts', 'stolen base', 'Caught Stealing'];
 
 // --- MUI Theme for Aesthetics ---
 const theme = createTheme({
@@ -83,7 +84,7 @@ function BaseballStatsApp() {
   const [sortConfig, setSortConfig] = useState({ key: 'Hits', direction: 'desc' });
   const [editingRow, setEditingRow] = useState(null); // ID of the player being edited
   const [editFormData, setEditFormData] = useState({}); // Data currently in the edit fields
-  
+
   // State for the LLM Analysis Feature
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [analysisResult, setAnalysisResult] = useState('');
@@ -97,28 +98,30 @@ function BaseballStatsApp() {
     setError(null);
     try {
       const response = await fetch(FULL_PLAYERS_URL);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       let data = await response.json();
 
+      console.log(data);
+
       // Deduplication: Filter to ensure only one entry per unique player name
       const playerMap = new Map();
-let counter = 1;
-for (const player of data) {
-  const key = player['Player name'];
-  if (!playerMap.has(key)) {
-    player.id = counter++;   // ✅ simple numeric ID for demo purposes
-    player.Id = player.id;   // ensure both properties exist consistently
-    playerMap.set(key, player);
-  }
-}
-      
+      let counter = 1;
+      for (const player of data) {
+        const key = player['Player name'];
+        if (!playerMap.has(key)) {
+          player.id = counter++;   // ✅ simple numeric ID for demo purposes
+          player.Id = player.id;   // ensure both properties exist consistently
+          playerMap.set(key, player);
+        }
+      }
+
       const uniquePlayers = Array.from(playerMap.values());
       setPlayerData(uniquePlayers);
-      
+
     } catch (err) {
       console.error("Failed to fetch player data:", err);
       setError(`Failed to load data: ${err.message}. Check network connection or public API status.`);
@@ -127,8 +130,35 @@ for (const player of data) {
     }
   };
 
+
+    const fetchUpdatedPlayers = async () => {
+   
+    try {
+      const response = await fetch(LOCAL_API_BASE_URL);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      let data = await response.json();
+     
+    } catch (err) {
+     
+    } finally {
+      
+    }
+  };
+
+
+
+
+
+
+
+
   useEffect(() => {
     fetchPlayers();
+    fetchUpdatedPlayers();
   }, []); // Run only once on mount
 
   // --- Sorting Logic ---
@@ -137,12 +167,12 @@ for (const player of data) {
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
     }
-    
+
     // Sort logic must explicitly compare numbers
     const sortedData = [...playerData].sort((a, b) => {
       const aVal = parseFloat(a[key]);
       const bVal = parseFloat(b[key]);
-      
+
       if (aVal < bVal) return direction === 'asc' ? -1 : 1;
       if (aVal > bVal) return direction === 'asc' ? 1 : -1;
       return 0;
@@ -166,50 +196,111 @@ for (const player of data) {
     setEditFormData(initialData);
   };
 
-const handleEditChange = (key, value) => {
-  setEditFormData(prev => ({
-    ...prev,
-    [key]: ['Hits', 'home run', 'run batted in', 'AVG'].includes(key)
-      ? Number(value)
-      : value,
-  }));
-};
-const handleSaveEdit = async () => {
-  setLoading(true);
-  try {
-    const player = playerData.find(p => p.id === editingRow || p.Id === editingRow);
-const payload = {
-  Id: player.id,
-  Name: player["Player name"],
-  Position: player.position,
-  Hits: Number(editFormData["Hits"]),
-  Home_Run: Number(editFormData["home run"]),
-  Run_Batted_In: Number(editFormData["run batted in"]),
-  Avg: parseFloat(editFormData["AVG"]),
-};
+  const handleEditChange = (key, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [key]: ['Hits', 'home run', 'run batted in', 'AVG'].includes(key)
+        ? Number(value)
+        : value,
+    }));
+  };
 
-    const response = await fetch(`${LOCAL_API_BASE_URL}/${payload.Id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
 
-    if (!response.ok) throw new Error(`Failed to save: ${response.status}`);
 
-    const updatedPlayer = await response.json();
+  const handleSaveEdit = async () => {
+    setLoading(true);
 
-    const updatedData = playerData.map(p =>
-      p.Id === updatedPlayer.Id ? { ...p, ...updatedPlayer } : p
-    );
-    setPlayerData(updatedData);
-    setEditingRow(null);
-  } catch (err) {
-    console.error('Error saving:', err);
-    alert('Failed to save edit — check console.');
-  } finally {
-    setLoading(false);
-  }
-};
+    // 1. Prepare the Payload
+    try {
+      const player = playerData.find(p => p.id === editingRow || p.Id === editingRow);
+
+      // Ensure you use a reliable ID property, assuming the model uses 'id' lowercase
+      const playerId = player?.id || player?.Id;
+
+      if (!playerId) {
+        throw new Error("Could not find a valid ID for the row being edited.");
+      }
+
+      const payload = {
+        // Use the actual ID for the payload
+        id: playerId,
+        name: player["Player name"],
+        position: player.position,
+        hits: Number(editFormData["Hits"]),
+        homeRun: Number(editFormData["home run"]),
+        runBattedIn: Number(editFormData["run batted in"]),
+        avg: parseFloat(editFormData["AVG"]),
+      };
+
+      let finalResponse;
+      const url = `${LOCAL_API_BASE_URL}/${playerId}`;
+      const headers = { 'Content-Type': 'application/json' };
+
+      // --- 2. Check for Player Existence (GET Request) ---
+      const checkResponse = await fetch(url, { method: 'GET' });
+
+      if (checkResponse.ok) {
+        // --- 3. Player EXISTS: Run PUT Request (UPDATE) ---
+        console.log(`Player with ID ${playerId} found. Running PUT (Update).`);
+        finalResponse = await fetch(url, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify(payload),
+        });
+
+      } else if (checkResponse.status === 404) {
+        // --- 4. Player DOES NOT EXIST: Run POST Request (INSERT) ---
+        console.log(`Player with ID ${playerId} not found. Running POST (Insert).`);
+
+        // IMPORTANT: For POST (Create), you usually remove the ID from the payload 
+        // so the database can generate a new one. The URL is also just the base path.
+
+        const postPayload = { ...payload };
+        delete postPayload.id;
+
+        finalResponse = await fetch(LOCAL_API_BASE_URL, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(postPayload),
+        });
+
+      } else {
+        // Handle unexpected errors during the check
+        throw new Error(`Failed to check player existence: ${checkResponse.status}`);
+      }
+
+      // --- 5. Handle Final Response ---
+      if (!finalResponse.ok) {
+        throw new Error(`Failed to save (final step): ${finalResponse.status}`);
+      }
+
+      // Note: Both POST (201 Created) and PUT (200 OK or 204 No Content) 
+      // should return the updated/created player object, or you can refetch.
+      const savedPlayer = finalResponse.status === 204 ? payload : await finalResponse.json();
+
+      // --- 6. Update Local State ---
+      const updatedData = playerData.map(p =>
+        // Use the returned ID for comparison
+        p.id === savedPlayer.id ? { ...p, ...savedPlayer } : p
+      );
+
+      // For POST, add the new player to the list
+      if (finalResponse.status === 201 && !updatedData.some(p => p.id === savedPlayer.id)) {
+        updatedData.push(savedPlayer);
+      }
+
+      setPlayerData(updatedData);
+      setEditingRow(null);
+
+    } catch (err) {
+      console.error('Error saving:', err);
+      alert('Failed to save edit — check console.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   const handleCancelEdit = () => {
     setEditingRow(null);
   };
@@ -226,10 +317,10 @@ const payload = {
     try {
       // *** SIMULATION: Replace this with a real fetch to your C# GenerateDescription endpoint ***
       // Example: const response = await fetch(`${LOCAL_API_BASE_URL}/Analyze`, { method: 'POST', ... });
-      
+
       // SIMULATION: Simulate a network delay and a mock LLM response
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       const playerStatsSummary = COLUMN_CONFIG
         .filter(c => c.key !== 'actions')
         .map(c => `${c.header}: ${player[c.key]}`)
@@ -266,7 +357,7 @@ const payload = {
     // Player Name Link (Trigger for LLM Analysis)
     if (key === 'Player name') {
       return (
-        <a 
+        <a
           href="#"
           onClick={(e) => { e.preventDefault(); handleAnalyzePlayer(player); }}
           className="font-semibold text-blue-600 hover:text-blue-800 transition-colors"
@@ -279,13 +370,13 @@ const payload = {
     // Editable Text Field
     if (isEditing && isEditable) {
       return (
-<TextField
-  size="small"
-  value={editFormData[key] || ''}
-  onChange={(e) => handleEditChange(key, e.target.value)}
-  type="text"
-  sx={{ width: 120 }}   // Or 150, 200 — whatever looks good
-/>
+        <TextField
+          size="small"
+          value={editFormData[key] || ''}
+          onChange={(e) => handleEditChange(key, e.target.value)}
+          type="text"
+          sx={{ width: 120 }}   // Or 150, 200 — whatever looks good
+        />
       );
     }
 
@@ -299,21 +390,21 @@ const payload = {
     if (isEditing) {
       return (
         <div className="flex space-x-2">
-          <Button 
-            onClick={handleSaveEdit} 
-            size="small" 
-            variant="contained" 
-            color="primary" 
+          <Button
+            onClick={handleSaveEdit}
+            size="small"
+            variant="contained"
+            color="primary"
             className="text-xs px-2 py-1"
             disabled={analysisLoading}
           >
             Save
           </Button>
-          <Button 
-            onClick={handleCancelEdit} 
-            size="small" 
-            variant="outlined" 
-            color="inherit" 
+          <Button
+            onClick={handleCancelEdit}
+            size="small"
+            variant="outlined"
+            color="inherit"
             className="text-xs px-2 py-1"
             disabled={analysisLoading}
           >
@@ -325,11 +416,11 @@ const payload = {
     }
 
     return (
-      <Button 
-        onClick={() => handleEditClick(player)} 
-        size="small" 
-        variant="outlined" 
-        color="inherit" 
+      <Button
+        onClick={() => handleEditClick(player)}
+        size="small"
+        variant="outlined"
+        color="inherit"
         className="text-xs px-2 py-1 text-gray-700 hover:bg-gray-100"
         disabled={analysisLoading}
       >
@@ -338,7 +429,7 @@ const payload = {
       </Button>
     );
   };
-  
+
   // --- Main Render ---
 
   if (loading) {
@@ -371,14 +462,14 @@ const payload = {
   return (
     <ThemeProvider theme={theme}>
       <div className="bg-gray-50 min-h-screen py-12">
-   <Container maxWidth={false} className="px-12">
+        <Container maxWidth={false} className="px-12">
           <Typography variant="h4" component="h1" className="mb-6 text-gray-800 font-bold">
             MLB Player Statistics Tracker
           </Typography>
 
           {/* LLM Analysis Display */}
           {selectedPlayer && (
-            <AnalysisDisplay 
+            <AnalysisDisplay
               selectedPlayer={selectedPlayer}
               analysisResult={analysisResult}
               isLoading={analysisLoading}
@@ -417,10 +508,10 @@ const payload = {
                   {playerData.map((player) => (
                     <tr key={player.id} className="border-b border-gray-100 hover:bg-blue-50 transition-colors">
                       {COLUMN_CONFIG.map((column) => (
-                     <td 
-  key={`${player.id}-${column.key}`} 
-  className={`p-3 text-sm text-gray-800 align-top text-left ${column.width}`}
->
+                        <td
+                          key={`${player.id}-${column.key}`}
+                          className={`p-3 text-sm text-gray-800 align-top text-left ${column.width}`}
+                        >
                           {column.key === 'actions' ? renderActionCell(player) : renderTableCell(player, column)}
                         </td>
                       ))}
@@ -431,7 +522,7 @@ const payload = {
             </div>
           </Paper>
           <Typography variant="caption" className="mt-4 block text-center text-gray-500">
-             Total Players Displayed: {playerData.length}
+            Total Players Displayed: {playerData.length}
           </Typography>
         </Container>
       </div>
